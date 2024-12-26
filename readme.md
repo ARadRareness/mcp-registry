@@ -12,7 +12,7 @@ FastMCP-HTTP is a Python package that provides a HTTP REST client-server solutio
 # Components
 
 ## HTTP Server
-The FastMCPHttpServer provides a HTTP server solution for MCP.
+The FastMCPHttpServer provides an HTTP server solution for MCP.
 
 ## HTTP Client
 The FastMCPHttpClient offers both synchronous and asynchronous interfaces to interact with FastMCP servers.
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 ## Usage
 
 1. Start the MCP Registry (server.py)
-2. Start a MCP server (and verify that it is properly registered in the registry)
+2. Start an MCP server (and verify that it is properly registered in the registry)
 3. Start a client and connect to the registry url
 
 
