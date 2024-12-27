@@ -21,6 +21,9 @@ It is extended to also function as a client to the MCP registry server.
 ## Registry Server
 The MCP Registry Server acts as a central coordinator for multiple MCP servers. It handles server registration, health monitoring, and provides a unified interface to access tools across all connected servers.
 
+## MCP Explorer
+The MCP Explorer provides a graphical user interface for interacting with MCP servers and their tools.
+
 # Installation
 
 1. Clone the repository
@@ -31,7 +34,9 @@ pip install -r requirements.txt
 
 # Examples
 
-## FastMCPHttpServer
+## Using the registry server
+
+### FastMCPHttpServer
 
 ```python
 from fastmcp_http.server import FastMCPHttpServer
@@ -46,7 +51,7 @@ if __name__ == "__main__":
     mcp.run_http()
 ```
 
-## FastMCPHttpClient
+### FastMCPHttpClient
 
 ```python
 from fastmcp_http.client import FastMCPHttpClient
@@ -58,6 +63,43 @@ def main():
 
     servers = client.list_servers()
     print(servers)
+
+    tools = client.list_tools()
+    print(tools)
+
+    result = client.call_tool("my_tool", {"text": "Hello, World!"})
+    print(result)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Standalone
+
+### FastMCPHttpServer
+
+```python
+from fastmcp_http.server import FastMCPHttpServer
+
+mcp = FastMCPHttpServer("MyServer", description="My MCP Server")
+
+@mcp.tool()
+def my_tool(text: str) -> str:
+    return f"Processed: {text}"
+
+if __name__ == "__main__":
+    mcp.run_http(register_server=False, port=15151)
+```
+
+### FastMCPHttpClient
+
+```python
+from fastmcp_http.client import FastMCPHttpClient
+
+
+def main():
+    client = FastMCPHttpClient("http://127.0.0.1:15151")
 
     tools = client.list_tools()
     print(tools)

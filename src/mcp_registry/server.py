@@ -174,13 +174,10 @@ def get_tools():
 
         for server in target_servers:
             try:
-                print("GETTING TOOLS FROM", server.url)
                 client = FastMCPHttpClient(f"{server.url}:{server.port}")
-                print("CLIENT created")
                 for tool in client.list_tools():
                     tool.name = f"{server.name}.{tool.name}"
                     all_tools.append(tool)
-                print("TOOLS GOT")
             except requests.RequestException as e:
                 print(f"Error fetching tools from {server.name}: {e}")
                 continue
