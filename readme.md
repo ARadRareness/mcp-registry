@@ -23,20 +23,10 @@ The MCP Registry Server acts as a central coordinator for multiple MCP servers. 
 
 # Installation
 
-## From Source
 1. Clone the repository
 2. Install the dependencies:
 ```bash
 pip install -r requirements.txt
-```
-3. Navigate to src/fastmcp_http
-4. Build the package:
-```bash
-python setup.py sdist bdist_wheel
-```
-4. Install the package:
-```bash
-pip install dist/fastmcp_http-0.1.0-py3-none-any.whl
 ```
 
 # Examples

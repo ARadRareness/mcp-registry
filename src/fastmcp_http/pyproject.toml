@@ -1,0 +1,27 @@
+# pyproject.toml
+
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fastmcp_http"
+version = "0.1.2"
+description = "FastMCP services via HTTP."
+readme = "readme.md"
+authors = [{ name = "Aradrareness", email = "38016746+ARadRareness@users.noreply.github.com" }]
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "requests",
+    "mcp",
+    "flask[async]",
+]
+requires-python = ">=3.6"
+
+[project.urls]
+Homepage = "https://github.com/ARadRareness/mcp-registry"
