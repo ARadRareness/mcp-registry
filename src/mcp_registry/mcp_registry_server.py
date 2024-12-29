@@ -1,3 +1,4 @@
+import time
 from flask import Flask, request, jsonify
 from dataclasses import dataclass
 from typing import Dict
@@ -6,8 +7,11 @@ import random
 import json
 import requests
 from pathlib import Path
+from datetime import datetime, timedelta
+from threading import Thread
 
 from fastmcp_http.client import FastMCPHttpClient
+from src.mcp_registry.permission_management import permission_server
 
 app = Flask(__name__)
 
@@ -20,11 +24,15 @@ class Server:
     port: int
 
 
-# Global dictionary to store servers
+# Global dictionaries to store servers and health status
 servers: Dict[str, Server] = {}
+health_cache: Dict[str, tuple[datetime, bool]] = {}
 
 # Add constants for storage
 STORAGE_FILE = Path("servers.json")
+
+# Add constant for permission server name
+PERMISSION_SERVER_NAME = "PermissionServer"
 
 
 def _generate_port(
@@ -64,6 +72,7 @@ def _generate_port(
 
 def check_server_health(server: Server) -> bool:
     """Check if a server is healthy by pinging its health endpoint.
+    Caches the result for 1 minutes.
 
     Args:
         server: Server instance to check
@@ -71,11 +80,20 @@ def check_server_health(server: Server) -> bool:
     Returns:
         bool: True if server is healthy, False otherwise
     """
+    # Check if we have a recent cached result
+    if server.name in health_cache:
+        last_check, is_healthy = health_cache[server.name]
+        if datetime.now() - last_check < timedelta(seconds=30):
+            return is_healthy
+
     try:
         response = requests.get(f"{server.url}:{server.port}/health", timeout=5)
-        return response.status_code == 200
+        is_healthy = response.status_code == 200
     except requests.RequestException:
-        return False
+        is_healthy = False
+
+    health_cache[server.name] = (datetime.now(), is_healthy)
+    return is_healthy
 
 
 def load_servers() -> Dict[str, Server]:
@@ -113,6 +131,10 @@ def register_server():
     required_fields = ["server_url", "server_name", "server_description"]
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
+
+    # Block registration of permission server name by other servers
+    if data["server_name"] == PERMISSION_SERVER_NAME:
+        return jsonify({"error": "Reserved server name"}), 403
 
     port = _generate_port(data["server_url"])
 
@@ -174,12 +196,15 @@ def get_tools():
 
         for server in target_servers:
             try:
+                if not check_server_health(server):
+                    continue
                 client = FastMCPHttpClient(f"{server.url}:{server.port}")
                 for tool in client.list_tools():
                     tool.name = f"{server.name}.{tool.name}"
                     all_tools.append(tool)
             except requests.RequestException as e:
                 print(f"Error fetching tools from {server.name}: {e}")
+                health_cache[server.name] = (datetime.now(), False)
                 continue
 
         return json.dumps([tool.model_dump() for tool in all_tools])
@@ -204,12 +229,20 @@ def call_tool():
     # Check if server name is specified (format: "server_name.tool_name")
     if "." in tool_name:
         server_name, tool_name = tool_name.split(".", 1)
+
+        # Add permission server tool restriction
+        if tool_name == "ask_for_permission" and server_name != PERMISSION_SERVER_NAME:
+            return jsonify({"error": "Permission denied: unauthorized server"}), 403
+
         if server_name not in servers:
             return jsonify({"error": f"Server '{server_name}' not found"}), 404
         target_servers = [servers[server_name]]
     else:
         # If no server specified, search all servers for the tool
-        target_servers = [s for s in servers.values() if check_server_health(s)]
+        if tool_name == "ask_for_permission":
+            target_servers = [servers[PERMISSION_SERVER_NAME]]
+        else:
+            target_servers = [s for s in servers.values() if check_server_health(s)]
 
     # Try each potential server
     for server in target_servers:
@@ -239,10 +272,41 @@ def call_tool():
     return jsonify({"error": error_msg}), 404
 
 
-if __name__ == "__main__":
-    # Load servers on startup
-    servers = load_servers()
-    for server in servers.keys():
-        print("Loaded server:", server)
+def load_permission_server():
+    permission_server_url = "http://127.0.0.1"
+    permission_port = _generate_port(permission_server_url)
+
+    permission_server_instance = Server(
+        name=PERMISSION_SERVER_NAME,
+        description=permission_server.mcp.description,  # type: ignore
+        url=permission_server_url,
+        port=permission_port,
+    )
+
+    # Add to global servers dict
+    servers[PERMISSION_SERVER_NAME] = permission_server_instance
+
+    # Start permission server in a new thread with the assigned port
+    permission_thread = Thread(
+        target=lambda: permission_server.mcp.run_http(
+            register_server=False, port=permission_port
+        ),
+        daemon=True,
+    )
+    permission_thread.start()
+    time.sleep(1)
+
+
+def run():
+    # Register permission server first
+    load_permission_server()
+
+    # Load other servers on startup
+    loaded_servers = load_servers()
+    for server in loaded_servers.keys():
+        if server != PERMISSION_SERVER_NAME:  # Don't override permission server
+            servers[server] = loaded_servers[server]
+            print("Loaded server:", server)
+
     save_servers()
     app.run(debug=False, port=31337)

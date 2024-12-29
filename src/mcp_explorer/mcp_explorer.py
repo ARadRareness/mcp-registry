@@ -142,12 +142,13 @@ class MCPExplorer(QMainWindow):
         server = servers[server_name]
 
         # Display server information
-        self.info_layout.addWidget(QLabel(f"Server Name: {server['name']}"))
-        self.info_layout.addWidget(QLabel(f"Description: {server['description']}"))
-        self.info_layout.addWidget(QLabel(f"URL: {server['url']}:{server['port']}"))
-
-        # Add separator before tools
-        self.info_layout.addWidget(QLabel("\nAvailable Tools:"))
+        for label in [
+            f"Server Name: {server['name']}",
+            f"Description: {server['description']}",
+            f"URL: {server['url']}:{server['port']}",
+            "\nAvailable Tools:",
+        ]:
+            self.info_layout.addWidget(QLabel(label))
 
         # Get and display tool information
         tools = self.get_server_tools(server)

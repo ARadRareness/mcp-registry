@@ -7,7 +7,7 @@ MCP Registry is a server solution that manages and coordinates multiple MCP (Mod
 - Health monitoring of registered servers
 - Unified access to tools across all registered servers
 
-FastMCP-HTTP is a Python package that provides a HTTP REST client-server solution for MCP. It offers a unified interface for accessing tools, prompts and resources through HTTP endpoints.
+FastMCP-HTTP is a Python package that provides an HTTP REST client-server solution for MCP. It offers a unified interface for accessing tools, prompts and resources through HTTP endpoints.
 
 # Components
 
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
 ## Usage
 
-1. Start the MCP Registry (server.py)
+1. Start the MCP Registry (start_registry_server.py)
 2. Start an MCP server (and verify that it is properly registered in the registry)
 3. Start a client and connect to the registry url
 

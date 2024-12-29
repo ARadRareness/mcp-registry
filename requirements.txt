@@ -1,3 +1,4 @@
 flask[async]
 requests
 fastmcp-http
+pyside6
